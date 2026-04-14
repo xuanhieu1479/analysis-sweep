@@ -1,0 +1,58 @@
+<div class="analysis-sweep-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>Analysis Sweep</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+
+            <div class="asweep-block">
+                <label for="asweep_pattern"><b>Pattern</b> (one question/line per row; blank lines ignored)</label>
+                <textarea id="asweep_pattern" class="text_pole textarea_compact" rows="8"
+                    placeholder="What actually happened in the scene?&#10;What were the user's instructions?&#10;What logically follows?&#10;..."></textarea>
+            </div>
+
+            <div class="asweep-block flex-container">
+                <label for="asweep_threshold">Match threshold (% of lines required):</label>
+                <input id="asweep_threshold" type="number" min="10" max="100" step="5" value="80" class="text_pole" style="width: 80px;" />
+            </div>
+
+            <div class="asweep-block flex-container">
+                <label for="asweep_fuzzy"><input id="asweep_fuzzy" type="checkbox" checked /> Fuzzy match (case-insensitive substring)</label>
+            </div>
+
+            <hr class="sysHR" />
+
+            <div class="asweep-block flex-container">
+                <input id="asweep_scan" class="menu_button" type="button" value="Scan" />
+                <input id="asweep_clear_marks" class="menu_button" type="button" value="Clear Marked" />
+            </div>
+
+            <div class="asweep-block">
+                <small id="asweep_status">No scan yet. Patterns saved automatically.</small>
+            </div>
+
+            <hr class="sysHR" />
+        </div>
+    </div>
+</div>
+
+<div id="asweep_modal" class="asweep-modal" style="display:none;">
+    <div class="asweep-modal-content">
+        <div class="asweep-modal-header">
+            <b>Scan Results</b>
+            <span id="asweep_modal_count"></span>
+            <span id="asweep_modal_close" class="asweep-close">&times;</span>
+        </div>
+        <div class="asweep-modal-toolbar">
+            <input id="asweep_expand_all" class="menu_button" type="button" value="Expand all" />
+            <input id="asweep_collapse_all" class="menu_button" type="button" value="Collapse all" />
+            <input id="asweep_toggle_all" class="menu_button" type="button" value="Include all / none" />
+        </div>
+        <div id="asweep_results" class="asweep-results"></div>
+        <div class="asweep-modal-footer">
+            <input id="asweep_delete" class="menu_button menu_button_danger" type="button" value="Delete selected" />
+            <input id="asweep_cancel" class="menu_button" type="button" value="Cancel" />
+        </div>
+    </div>
+</div>
