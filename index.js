@@ -1,5 +1,5 @@
 import { extension_settings, getContext } from "../../../extensions.js";
-import { saveSettingsDebounced, eventSource, event_types } from "../../../../script.js";
+import { saveSettingsDebounced, eventSource, event_types, reloadCurrentChat } from "../../../../script.js";
 
 const extensionName = "analysis-sweep";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -138,7 +138,6 @@ async function deleteSelected() {
         toastr.info("Nothing selected.");
         return;
     }
-    if (!confirm(`Delete ${chosen.length} message(s)? This cannot be undone.`)) return;
 
     // DESCENDING order — splicing low indices first would shift higher ones.
     const indices = [...new Set(chosen.map(r => r.idx))].sort((a, b) => b - a);
@@ -148,7 +147,6 @@ async function deleteSelected() {
     for (const idx of indices) {
         if (idx < 0 || idx >= chat.length) continue;
         chat.splice(idx, 1);
-        $(`.mes[mesid="${idx}"]`).remove();
         try { await eventSource.emit(event_types.MESSAGE_DELETED, idx); } catch (_) {}
     }
 
@@ -156,18 +154,22 @@ async function deleteSelected() {
     settings().markedFingerprints = [];
     saveSettingsDebounced();
 
-    // Persist chat. ST re-indexes messages on reload; force a save via event if available.
+    // Persist chat.
     try {
         if (context.saveChat) await context.saveChat();
-        else await eventSource.emit(event_types.CHAT_CHANGED);
     } catch (_) {}
 
-    // Refresh DOM indices on remaining messages so subsequent scans work.
-    $("#chat .mes").each((i, el) => $(el).attr("mesid", i));
-
     closeModal();
-    toastr.success(`Deleted ${indices.length} message(s). If any remain visible, reload the chat.`);
     lastScan = [];
+
+    // Reload the chat so DOM matches the updated chat array cleanly.
+    try {
+        await reloadCurrentChat();
+    } catch (_) {
+        try { await eventSource.emit(event_types.CHAT_CHANGED); } catch (_) {}
+    }
+
+    toastr.success(`Deleted ${indices.length} message(s).`);
 }
 
 function onScan() {

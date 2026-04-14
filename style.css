@@ -16,6 +16,8 @@
     margin: 0 4px;
     opacity: 0.5;
     font-size: 0.9em;
+    position: relative;
+    top: 2px;
 }
 .mes .asweep-mark-btn:hover { opacity: 1; }
 .mes .asweep-mark-btn.marked { opacity: 1; color: #e06c75; }
