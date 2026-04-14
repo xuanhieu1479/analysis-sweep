@@ -260,6 +260,11 @@ jQuery(async () => {
         renderResults();
     });
 
+    // Floating scan shortcut anchored to #sheld.
+    const $floatingScan = $(`<div id="asweep_floating_scan" class="fa-solid fa-broom" title="Analysis Sweep: Scan"></div>`);
+    $floatingScan.on("click", onScan);
+    $("#sheld").append($floatingScan);
+
     injectAllMarkButtons();
     observeChat();
     // Re-inject when ST swaps chats or sends new messages.

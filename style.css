@@ -16,9 +16,31 @@
     margin: 0 4px;
     opacity: 0.5;
     font-size: 0.9em;
-    position: relative;
-    top: 2px;
+    padding-top: 4px;
 }
+
+/* Floating scan shortcut, anchored to middle-left of #sheld */
+#sheld { position: relative; }
+#asweep_floating_scan {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--SmartThemeBorderColor, #444);
+    background: var(--SmartThemeBlurTintColor, #1a1a1a);
+    color: var(--SmartThemeBodyColor, #eee);
+    cursor: pointer;
+    opacity: 0.55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+}
+#asweep_floating_scan:hover { opacity: 1; }
 .mes .asweep-mark-btn:hover { opacity: 1; }
 .mes .asweep-mark-btn.marked { opacity: 1; color: #e06c75; }
 
