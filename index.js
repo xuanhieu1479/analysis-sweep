@@ -260,10 +260,31 @@ jQuery(async () => {
         renderResults();
     });
 
-    // Floating scan shortcut anchored to #sheld.
+    // Floating scan shortcut — appended to body, positioned at middle-left of #sheld via JS.
     const $floatingScan = $(`<div id="asweep_floating_scan" class="fa-solid fa-broom" title="Analysis Sweep: Scan"></div>`);
     $floatingScan.on("click", onScan);
-    $("#sheld").append($floatingScan);
+    $("body").append($floatingScan);
+
+    function positionFloatingScan() {
+        const sheld = document.getElementById("sheld");
+        if (sheld) {
+            const rect = sheld.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                $floatingScan.css({
+                    left: (rect.left + 8) + "px",
+                    top: (rect.top + rect.height / 2) + "px",
+                });
+                return;
+            }
+        }
+        // Fallback: left-center of viewport so the user can still see it.
+        $floatingScan.css({ left: "8px", top: "50%" });
+    }
+
+    positionFloatingScan();
+    window.addEventListener("resize", positionFloatingScan);
+    // ST may rearrange layout on chat switch / panel toggle — repoll.
+    setInterval(positionFloatingScan, 1000);
 
     injectAllMarkButtons();
     observeChat();
