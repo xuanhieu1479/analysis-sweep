@@ -229,6 +229,10 @@ jQuery(async () => {
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
 
+    // Modal must live at body level so it renders even when the extension
+    // drawer is collapsed (parent would otherwise hide it).
+    $("#asweep_modal").detach().appendTo("body");
+
     const s = settings();
     $("#asweep_pattern").val(s.pattern);
     $("#asweep_threshold").val(s.threshold);
@@ -272,13 +276,13 @@ jQuery(async () => {
             if (rect.width > 0 && rect.height > 0) {
                 $floatingScan.css({
                     left: (rect.left + 8) + "px",
-                    top: (rect.top + rect.height / 2) + "px",
+                    top: (rect.top + rect.height * 0.4) + "px",
                 });
                 return;
             }
         }
-        // Fallback: left-center of viewport so the user can still see it.
-        $floatingScan.css({ left: "8px", top: "50%" });
+        // Fallback: 40% down from top, left-aligned, so the user can still see it.
+        $floatingScan.css({ left: "8px", top: "40%" });
     }
 
     positionFloatingScan();
