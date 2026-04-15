@@ -264,25 +264,47 @@ jQuery(async () => {
         renderResults();
     });
 
-    // Floating scan shortcut — appended to body, positioned at middle-left of #sheld via JS.
+    // Floating shortcut buttons — appended to body, anchored to #sheld via JS.
     const $floatingScan = $(`<div id="asweep_floating_scan" class="fa-solid fa-broom" title="Analysis Sweep: Scan"></div>`);
     $floatingScan.on("click", onScan);
     $("body").append($floatingScan);
 
+    const $floatingReload = $(`<div id="asweep_floating_reload" class="fa-solid fa-rotate-right" title="Reload current chat"></div>`);
+    $floatingReload.on("click", async () => {
+        try { await reloadCurrentChat(); toastr.info("Chat reloaded."); }
+        catch (e) { toastr.warning("Reload failed: " + e.message); }
+    });
+    $("body").append($floatingReload);
+
+    const STACK_GAP = 12; // px between the two buttons
+
     function positionFloatingScan() {
         const sheld = document.getElementById("sheld");
+        let left, top;
         if (sheld) {
             const rect = sheld.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
-                $floatingScan.css({
-                    left: (rect.left + 8) + "px",
-                    top: (rect.top + rect.height * 0.4) + "px",
-                });
-                return;
+                left = rect.left + 8;
+                top = rect.top + rect.height * 0.2;
             }
         }
-        // Fallback: 40% down from top, left-aligned, so the user can still see it.
-        $floatingScan.css({ left: "8px", top: "40%" });
+        if (left === undefined) {
+            // Fallback: 20% down from top, left-aligned, so the user can still see it.
+            $floatingScan.css({ left: "8px", top: "20%" });
+            // Reload button sits directly below.
+            const scanRect = $floatingScan[0].getBoundingClientRect();
+            $floatingReload.css({
+                left: "8px",
+                top: (scanRect.bottom + STACK_GAP) + "px",
+            });
+            return;
+        }
+        $floatingScan.css({ left: left + "px", top: top + "px" });
+        // Reload button: scan button height is 36, plus gap; translateY(-50%) so add 36/2 to get bottom.
+        $floatingReload.css({
+            left: left + "px",
+            top: (top + 36 / 2 + STACK_GAP + 36 / 2) + "px",
+        });
     }
 
     positionFloatingScan();

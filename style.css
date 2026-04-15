@@ -20,7 +20,8 @@
 }
 
 /* Floating scan shortcut, anchored to middle-left of #sheld via JS. */
-#asweep_floating_scan {
+#asweep_floating_scan,
+#asweep_floating_reload {
     position: fixed;
     z-index: 9999;
     width: 36px;
@@ -38,7 +39,8 @@
     transform: translateY(-50%);
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
-#asweep_floating_scan:hover { opacity: 1; }
+#asweep_floating_scan:hover,
+#asweep_floating_reload:hover { opacity: 1; }
 .mes .asweep-mark-btn:hover { opacity: 1; }
 .mes .asweep-mark-btn.marked { opacity: 1; color: #e06c75; }
 
