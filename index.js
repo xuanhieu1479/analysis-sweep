@@ -271,7 +271,7 @@ jQuery(async () => {
 
     const $floatingReload = $(`<div id="asweep_floating_reload" class="fa-solid fa-rotate-right" title="Reload current chat"></div>`);
     $floatingReload.on("click", async () => {
-        try { await reloadCurrentChat(); toastr.info("Chat reloaded."); }
+        try { await reloadCurrentChat(); }
         catch (e) { toastr.warning("Reload failed: " + e.message); }
     });
     $("body").append($floatingReload);
