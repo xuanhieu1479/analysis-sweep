@@ -1,6 +1,6 @@
 import { extension_settings, getContext } from "../../../extensions.js";
 import { saveSettingsDebounced, eventSource, event_types, reloadCurrentChat } from "../../../../script.js";
-import { registerSlashCommand } from "../../../slash-commands.js";
+import { registerSlashCommand, executeSlashCommands } from "../../../slash-commands.js";
 
 const extensionName = "analysis-sweep";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -174,9 +174,13 @@ async function deleteSelected() {
 }
 
 async function cleanMessages(args, value) {
-    const startIdx = parseInt(value, 10);
-    if (isNaN(startIdx) || startIdx < 0) {
-        toastr.warning("Usage: /clean [start_index] — deletes from start_index to last-1");
+    const trimmed = (value || "").trim();
+    const isAbsolute = trimmed.startsWith("~");
+    const numStr = isAbsolute ? trimmed.slice(1) : trimmed;
+    const num = parseInt(numStr, 10);
+
+    if (isNaN(num) || num < 0) {
+        toastr.warning("Usage: /clean N (delete N latest) or /clean ~N (delete from index N)");
         return "";
     }
 
@@ -188,36 +192,22 @@ async function cleanMessages(args, value) {
     }
 
     const lastIdx = chat.length - 1;
+    let startIdx;
+
+    if (isAbsolute) {
+        startIdx = num;
+    } else {
+        startIdx = lastIdx - num;
+        if (startIdx < 0) startIdx = 0;
+    }
+
     if (startIdx >= lastIdx) {
         toastr.info("Nothing to delete — start index is at or beyond the last message.");
         return "";
     }
 
-    // Delete from startIdx to lastIdx-1 (preserve the last message)
-    // Work in descending order to avoid index shifting issues
-    const indices = [];
-    for (let i = lastIdx - 1; i >= startIdx; i--) {
-        indices.push(i);
-    }
-
-    for (const idx of indices) {
-        chat.splice(idx, 1);
-        try { await eventSource.emit(event_types.MESSAGE_DELETED, idx); } catch (_) {}
-    }
-
-    // Persist chat
-    try {
-        if (context.saveChat) await context.saveChat();
-    } catch (_) {}
-
-    // Reload chat to sync DOM
-    try {
-        await reloadCurrentChat();
-    } catch (_) {
-        try { await eventSource.emit(event_types.CHAT_CHANGED); } catch (_) {}
-    }
-
-    toastr.success(`Deleted ${indices.length} message(s) from #${startIdx} to #${lastIdx - 1}.`);
+    const endIdx = lastIdx - 1;
+    await executeSlashCommands(`/cut ${startIdx}-${endIdx}`);
     return "";
 }
 
@@ -276,7 +266,7 @@ function observeChat() {
 
 jQuery(async () => {
     // Register /clean slash command
-    registerSlashCommand("clean", cleanMessages, [], "Deletes messages from [start_index] to last-1, preserving the final message. Usage: /clean 50");
+    registerSlashCommand("clean", cleanMessages, [], "Deletes messages preserving the final one. /clean 30 = delete 30 latest, /clean ~30 = delete from index 30");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
