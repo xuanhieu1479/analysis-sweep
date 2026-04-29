@@ -266,7 +266,7 @@ function observeChat() {
 
 jQuery(async () => {
     // Register /clear slash command
-    registerSlashCommand("clean", cleanMessages, [], "Deletes messages preserving the final one. /clear 30 = delete 30 latest, /clear ~30 = delete from index 30");
+    registerSlashCommand("clear", cleanMessages, [], "Deletes messages preserving the final one. /clear 30 = delete 30 latest, /clear ~30 = delete from index 30");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
