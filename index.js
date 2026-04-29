@@ -180,7 +180,7 @@ async function cleanMessages(args, value) {
     const num = parseInt(numStr, 10);
 
     if (isNaN(num) || num < 0) {
-        toastr.warning("Usage: /clean N (delete N latest) or /clean ~N (delete from index N)");
+        toastr.warning("Usage: /clear N (delete N latest) or /clear ~N (delete from index N)");
         return "";
     }
 
@@ -265,8 +265,8 @@ function observeChat() {
 }
 
 jQuery(async () => {
-    // Register /clean slash command
-    registerSlashCommand("clean", cleanMessages, [], "Deletes messages preserving the final one. /clean 30 = delete 30 latest, /clean ~30 = delete from index 30");
+    // Register /clear slash command
+    registerSlashCommand("clean", cleanMessages, [], "Deletes messages preserving the final one. /clear 30 = delete 30 latest, /clear ~30 = delete from index 30");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
