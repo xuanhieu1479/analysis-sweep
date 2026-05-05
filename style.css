@@ -23,7 +23,7 @@
 #asweep_floating_scan,
 #asweep_floating_reload {
     position: fixed;
-    z-index: 9999;
+    z-index: 40;
     width: 36px;
     height: 36px;
     border-radius: 50%;
