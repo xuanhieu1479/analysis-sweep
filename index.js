@@ -264,11 +264,17 @@ function onClearMarks() {
 }
 
 function injectMarkButton($mes) {
-    if ($mes.find(".asweep-mark-btn").length) return;
     const mesid = parseInt($mes.attr("mesid"), 10);
     const chat = getContext().chat || [];
     const msg = chat[mesid];
     if (!msg) return;
+
+    const $existing = $mes.find(".asweep-mark-btn");
+    if ($existing.length) {
+        $existing.toggleClass("marked", isMarked(msg));
+        return;
+    }
+
     const $btn = $(`<div class="asweep-mark-btn fa-solid fa-trash-can" title="Mark for analysis-sweep delete"></div>`);
     if (isMarked(msg)) $btn.addClass("marked");
     $btn.on("click", e => {
