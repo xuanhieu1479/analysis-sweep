@@ -175,12 +175,10 @@ async function deleteSelected() {
 
 async function cleanMessages(args, value) {
     const trimmed = (value || "").trim();
-    const isAbsolute = trimmed.startsWith("~");
-    const numStr = isAbsolute ? trimmed.slice(1) : trimmed;
-    const num = parseInt(numStr, 10);
+    const startIdx = parseInt(trimmed, 10);
 
-    if (isNaN(num) || num < 0) {
-        toastr.warning("Usage: /clear N (delete N latest) or /clear ~N (delete from index N)");
+    if (isNaN(startIdx) || startIdx < 0) {
+        toastr.warning("Usage: /clear N (delete from index N to last - 1)");
         return "";
     }
 
@@ -192,14 +190,6 @@ async function cleanMessages(args, value) {
     }
 
     const lastIdx = chat.length - 1;
-    let startIdx;
-
-    if (isAbsolute) {
-        startIdx = num;
-    } else {
-        startIdx = lastIdx - num;
-        if (startIdx < 0) startIdx = 0;
-    }
 
     if (startIdx >= lastIdx) {
         toastr.info("Nothing to delete — start index is at or beyond the last message.");
@@ -305,7 +295,7 @@ function observeChat() {
 
 jQuery(async () => {
     // Register slash commands
-    registerSlashCommand("clear", cleanMessages, [], "Deletes messages preserving the final one. /clear 30 = delete 30 latest, /clear ~30 = delete from index 30");
+    registerSlashCommand("clear", cleanMessages, [], "Deletes messages from index N to last - 1, preserving the final message. /clear 30 = delete from index 30");
     registerSlashCommand("mark", markRange, [], "Marks messages from index N to the last message (inclusive) for analysis-sweep deletion. /mark 300 = mark from index 300 to end");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
