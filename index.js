@@ -211,6 +211,45 @@ async function cleanMessages(args, value) {
     return "";
 }
 
+function markRange(args, value) {
+    const trimmed = (value || "").trim();
+    const startIdx = parseInt(trimmed, 10);
+
+    if (isNaN(startIdx) || startIdx < 0) {
+        toastr.warning("Usage: /mark N — marks messages from index N to the last message (inclusive)");
+        return "";
+    }
+
+    const chat = getContext().chat || [];
+    if (chat.length === 0) {
+        toastr.warning("No chat loaded.");
+        return "";
+    }
+
+    const lastIdx = chat.length - 1;
+    if (startIdx > lastIdx) {
+        toastr.warning(`Start index ${startIdx} exceeds last message index ${lastIdx}.`);
+        return "";
+    }
+
+    const s = settings();
+    let markedCount = 0;
+
+    for (let i = startIdx; i <= lastIdx; i++) {
+        const msg = chat[i];
+        const fp = fingerprint(msg);
+        if (!s.markedFingerprints.includes(fp)) {
+            s.markedFingerprints.push(fp);
+            markedCount++;
+        }
+    }
+
+    saveSettingsDebounced();
+    injectAllMarkButtons();
+    toastr.success(`Marked ${markedCount} message(s) from index ${startIdx} to ${lastIdx}.`);
+    return "";
+}
+
 function onScan() {
     // Persist current UI values first.
     settings().pattern = $("#asweep_pattern").val();
@@ -265,8 +304,9 @@ function observeChat() {
 }
 
 jQuery(async () => {
-    // Register /clear slash command
+    // Register slash commands
     registerSlashCommand("clear", cleanMessages, [], "Deletes messages preserving the final one. /clear 30 = delete 30 latest, /clear ~30 = delete from index 30");
+    registerSlashCommand("mark", markRange, [], "Marks messages from index N to the last message (inclusive) for analysis-sweep deletion. /mark 300 = mark from index 300 to end");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
