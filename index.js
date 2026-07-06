@@ -18,9 +18,12 @@ const defaultSettings = {
     threshold: 80,
     fuzzy: true,
     markedFingerprints: [],
+    compactPattern: `[OOC: Background context:
+{{content}}]`,
 };
 
 let lastScan = [];
+let lastCompactScan = [];
 
 function settings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
@@ -48,6 +51,80 @@ function toggleMark(msg) {
     if (idx === -1) s.markedFingerprints.push(fp);
     else s.markedFingerprints.splice(idx, 1);
     saveSettingsDebounced();
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function templateToRegex(template) {
+    const placeholder = "{{content}}";
+    const idx = template.indexOf(placeholder);
+    if (idx === -1) return null;
+
+    const before = template.slice(0, idx);
+    const after = template.slice(idx + placeholder.length);
+
+    const pattern = escapeRegex(before) + "[\\s\\S]*?" + escapeRegex(after);
+    return new RegExp(pattern, "g");
+}
+
+const LOREBOOK_APP_URL = "http://localhost:5173";
+
+async function fetchClipboardTemplate() {
+    try {
+        const res = await fetch(`${LOREBOOK_APP_URL}/api/settings`, { signal: AbortSignal.timeout(2000) });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.clipboardTemplate || null;
+    } catch {
+        return null;
+    }
+}
+
+async function getCompactPattern() {
+    const remote = await fetchClipboardTemplate();
+    if (remote) {
+        settings().compactPattern = remote;
+        $("#asweep_compact_pattern").val(remote);
+        saveSettingsDebounced();
+        return remote;
+    }
+    return settings().compactPattern || "";
+}
+
+function scanCompactWithPattern(template) {
+    if (!template || !template.trim()) {
+        toastr.error("Compact pattern is empty. Configure it in the Lorebook app or extension settings.");
+        return [];
+    }
+
+    const regex = templateToRegex(template);
+    if (!regex) {
+        toastr.error("Compact pattern must contain {{content}} placeholder.");
+        return [];
+    }
+
+    const chat = getContext().chat || [];
+    const results = [];
+
+    chat.forEach((msg, idx) => {
+        const text = msg.mes || "";
+        const matches = text.match(regex);
+        if (matches && matches.length > 0) {
+            const stripped = text.replace(regex, "").trim();
+            results.push({
+                idx,
+                msg,
+                matches,
+                originalText: text,
+                strippedText: stripped,
+                include: true,
+            });
+        }
+    });
+
+    return results;
 }
 
 function patternLines() {
@@ -132,6 +209,96 @@ function openModal() {
     $("#asweep_modal").show();
 }
 function closeModal() { $("#asweep_modal").hide(); }
+
+function renderCompactResults() {
+    const $list = $("#asweep_compact_results");
+    $list.empty();
+    for (const r of lastCompactScan) {
+        const sender = r.msg.name || (r.msg.is_user ? "User" : "AI");
+        const date = r.msg.send_date || "";
+        const matchCount = r.matches.length;
+        const snippet = r.originalText.replace(/\s+/g, " ").slice(0, 100);
+        const isEmpty = !r.strippedText.trim();
+
+        const beforePre = $("<pre class='asweep-compact-before'></pre>").text(r.originalText);
+        const afterPre = $("<pre class='asweep-compact-after'></pre>").text(r.strippedText || "(empty)");
+        if (isEmpty) afterPre.addClass("asweep-empty-warning");
+
+        const cb = $(`<input type='checkbox' ${r.include ? "checked" : ""} />`)
+            .on("click", e => { e.stopPropagation(); r.include = e.target.checked; updateCompactCount(); });
+
+        const head = $("<div class='asweep-result-head'></div>")
+            .append(cb)
+            .append($("<span></span>").text(`#${r.idx}`))
+            .append($("<span class='asweep-tag compact'></span>").text(`${matchCount} match${matchCount > 1 ? "es" : ""}`));
+
+        if (isEmpty) {
+            head.append($("<span class='asweep-tag empty-tag'></span>").text("EMPTY"));
+        }
+
+        head.append($("<span></span>").text(sender))
+            .append($("<span class='asweep-snippet'></span>").text(snippet))
+            .append($("<small></small>").text(date))
+            .on("click", e => {
+                if (e.target.tagName === "INPUT") return;
+                $(e.currentTarget).parent().toggleClass("expanded");
+            });
+
+        const diffContainer = $("<div class='asweep-compact-diff'></div>")
+            .append($("<div class='asweep-diff-label'>Before:</div>"))
+            .append(beforePre)
+            .append($("<div class='asweep-diff-label'>After:</div>"))
+            .append(afterPre);
+
+        const row = $("<div class='asweep-result'></div>").append(head).append(diffContainer);
+        $list.append(row);
+    }
+    updateCompactCount();
+}
+
+function updateCompactCount() {
+    const total = lastCompactScan.length;
+    const on = lastCompactScan.filter(r => r.include).length;
+    $("#asweep_compact_modal_count").text(`(${on} of ${total} selected)`);
+}
+
+function openCompactModal() {
+    renderCompactResults();
+    $("#asweep_compact_modal").show();
+}
+function closeCompactModal() { $("#asweep_compact_modal").hide(); }
+
+async function applyCompact() {
+    const chosen = lastCompactScan.filter(r => r.include);
+    if (chosen.length === 0) {
+        toastr.info("Nothing selected.");
+        return;
+    }
+
+    const context = getContext();
+    const chat = context.chat;
+
+    for (const r of chosen) {
+        const idx = r.idx;
+        if (idx < 0 || idx >= chat.length) continue;
+        chat[idx].mes = r.strippedText;
+    }
+
+    try {
+        if (context.saveChat) await context.saveChat();
+    } catch (_) {}
+
+    closeCompactModal();
+    lastCompactScan = [];
+
+    try {
+        await reloadCurrentChat();
+    } catch (_) {
+        try { await eventSource.emit(event_types.CHAT_CHANGED); } catch (_) {}
+    }
+
+    toastr.success(`Compacted ${chosen.length} message(s).`);
+}
 
 async function deleteSelected() {
     const chosen = lastScan.filter(r => r.include);
@@ -256,6 +423,29 @@ function onScan() {
     openModal();
 }
 
+async function onCompactScan() {
+    $("#asweep_compact_status").text("Fetching pattern...");
+    const pattern = await getCompactPattern();
+
+    lastCompactScan = scanCompactWithPattern(pattern);
+    if (lastCompactScan.length === 0) {
+        $("#asweep_compact_status").text("No matches found.");
+        return;
+    }
+    $("#asweep_compact_status").text(`Found ${lastCompactScan.length} message(s) with matches.`);
+    openCompactModal();
+}
+
+async function compactCommand(args, value) {
+    const pattern = await getCompactPattern();
+    lastCompactScan = scanCompactWithPattern(pattern);
+    if (lastCompactScan.length === 0) {
+        return "";
+    }
+    openCompactModal();
+    return "";
+}
+
 function onClearMarks() {
     settings().markedFingerprints = [];
     saveSettingsDebounced();
@@ -303,6 +493,7 @@ jQuery(async () => {
     // Register slash commands
     registerSlashCommand("clear", cleanMessages, [], "Deletes messages from index N to last - 1, preserving the final message. /clear 30 = delete from index 30");
     registerSlashCommand("mark", markRange, [], "Marks messages from index N to the last message (inclusive) for analysis-sweep deletion. /mark 300 = mark from index 300 to end");
+    registerSlashCommand("compact", compactCommand, [], "Scans messages and strips out content matching the compact pattern (e.g., OOC context blocks). Opens a preview before applying.");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings").append(html);
@@ -310,11 +501,13 @@ jQuery(async () => {
     // Modal must live at body level so it renders even when the extension
     // drawer is collapsed (parent would otherwise hide it).
     $("#asweep_modal").detach().appendTo("body");
+    $("#asweep_compact_modal").detach().appendTo("body");
 
     const s = settings();
     $("#asweep_pattern").val(s.pattern);
     $("#asweep_threshold").val(s.threshold);
     $("#asweep_fuzzy").prop("checked", s.fuzzy);
+    $("#asweep_compact_pattern").val(s.compactPattern);
 
     $("#asweep_pattern").on("input", () => {
         settings().pattern = $("#asweep_pattern").val();
@@ -326,6 +519,10 @@ jQuery(async () => {
     });
     $("#asweep_fuzzy").on("input", () => {
         settings().fuzzy = $("#asweep_fuzzy").prop("checked");
+        saveSettingsDebounced();
+    });
+    $("#asweep_compact_pattern").on("input", () => {
+        settings().compactPattern = $("#asweep_compact_pattern").val();
         saveSettingsDebounced();
     });
 
@@ -342,10 +539,27 @@ jQuery(async () => {
         renderResults();
     });
 
+    // Compact modal handlers
+    $("#asweep_compact_scan").on("click", onCompactScan);
+    $("#asweep_compact_apply").on("click", applyCompact);
+    $("#asweep_compact_cancel").on("click", closeCompactModal);
+    $("#asweep_compact_modal_close").on("click", closeCompactModal);
+    $("#asweep_compact_expand_all").on("click", () => $("#asweep_compact_results .asweep-result").addClass("expanded"));
+    $("#asweep_compact_collapse_all").on("click", () => $("#asweep_compact_results .asweep-result").removeClass("expanded"));
+    $("#asweep_compact_toggle_all").on("click", () => {
+        const anyOff = lastCompactScan.some(r => !r.include);
+        lastCompactScan.forEach(r => r.include = anyOff);
+        renderCompactResults();
+    });
+
     // Floating shortcut buttons — appended to body, anchored to #sheld via JS.
     const $floatingScan = $(`<div id="asweep_floating_scan" class="fa-solid fa-broom" title="Analysis Sweep: Scan"></div>`);
     $floatingScan.on("click", onScan);
     $("body").append($floatingScan);
+
+    const $floatingCompact = $(`<div id="asweep_floating_compact" class="fa-solid fa-compress" title="Compact: Strip OOC context"></div>`);
+    $floatingCompact.on("click", onCompactScan);
+    $("body").append($floatingCompact);
 
     const $floatingReload = $(`<div id="asweep_floating_reload" class="fa-solid fa-rotate-right" title="Reload current chat"></div>`);
     $floatingReload.on("click", async () => {
@@ -354,9 +568,10 @@ jQuery(async () => {
     });
     $("body").append($floatingReload);
 
-    const STACK_GAP = 12; // px between the two buttons
+    const STACK_GAP = 12; // px between buttons
+    const BTN_SIZE = 36;
 
-    function positionFloatingScan() {
+    function positionFloatingButtons() {
         const sheld = document.getElementById("sheld");
         let left, top;
         if (sheld) {
@@ -367,28 +582,18 @@ jQuery(async () => {
             }
         }
         if (left === undefined) {
-            // Fallback: 20% down from top, left-aligned, so the user can still see it.
-            $floatingScan.css({ left: "8px", top: "20%" });
-            // Reload button sits directly below.
-            const scanRect = $floatingScan[0].getBoundingClientRect();
-            $floatingReload.css({
-                left: "8px",
-                top: (scanRect.bottom + STACK_GAP) + "px",
-            });
-            return;
+            left = 8;
+            top = window.innerHeight * 0.2;
         }
         $floatingScan.css({ left: left + "px", top: top + "px" });
-        // Reload button: scan button height is 36, plus gap; translateY(-50%) so add 36/2 to get bottom.
-        $floatingReload.css({
-            left: left + "px",
-            top: (top + 36 / 2 + STACK_GAP + 36 / 2) + "px",
-        });
+        $floatingCompact.css({ left: left + "px", top: (top + BTN_SIZE + STACK_GAP) + "px" });
+        $floatingReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 2) + "px" });
     }
 
-    positionFloatingScan();
-    window.addEventListener("resize", positionFloatingScan);
+    positionFloatingButtons();
+    window.addEventListener("resize", positionFloatingButtons);
     // ST may rearrange layout on chat switch / panel toggle — repoll.
-    setInterval(positionFloatingScan, 1000);
+    setInterval(positionFloatingButtons, 1000);
 
     injectAllMarkButtons();
     observeChat();

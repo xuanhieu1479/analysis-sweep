@@ -33,6 +33,23 @@
             </div>
 
             <hr class="sysHR" />
+
+            <div class="asweep-block">
+                <label for="asweep_compact_pattern"><b>Compact Pattern</b> (use <code>{{content}}</code> to match any text)</label>
+                <textarea id="asweep_compact_pattern" class="text_pole textarea_compact" rows="4"
+                    placeholder="[OOC: Background context:&#10;{{content}}]"></textarea>
+                <small>The /compact command will strip all text matching this pattern from messages.</small>
+            </div>
+
+            <div class="asweep-block flex-container">
+                <input id="asweep_compact_scan" class="menu_button" type="button" value="Compact Scan" />
+            </div>
+
+            <div class="asweep-block">
+                <small id="asweep_compact_status">No compact scan yet.</small>
+            </div>
+
+            <hr class="sysHR" />
         </div>
     </div>
 </div>
@@ -53,6 +70,26 @@
         <div class="asweep-modal-footer">
             <input id="asweep_delete" class="menu_button menu_button_danger" type="button" value="Delete selected" />
             <input id="asweep_cancel" class="menu_button" type="button" value="Cancel" />
+        </div>
+    </div>
+</div>
+
+<div id="asweep_compact_modal" class="asweep-modal" style="display:none;">
+    <div class="asweep-modal-content asweep-compact-modal-content">
+        <div class="asweep-modal-header">
+            <b>Compact Preview</b>
+            <span id="asweep_compact_modal_count"></span>
+            <span id="asweep_compact_modal_close" class="asweep-close">&times;</span>
+        </div>
+        <div class="asweep-modal-toolbar">
+            <input id="asweep_compact_expand_all" class="menu_button" type="button" value="Expand all" />
+            <input id="asweep_compact_collapse_all" class="menu_button" type="button" value="Collapse all" />
+            <input id="asweep_compact_toggle_all" class="menu_button" type="button" value="Include all / none" />
+        </div>
+        <div id="asweep_compact_results" class="asweep-results"></div>
+        <div class="asweep-modal-footer">
+            <input id="asweep_compact_apply" class="menu_button menu_button_danger" type="button" value="Apply compact" />
+            <input id="asweep_compact_cancel" class="menu_button" type="button" value="Cancel" />
         </div>
     </div>
 </div>
