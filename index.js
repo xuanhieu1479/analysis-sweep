@@ -319,6 +319,9 @@ async function deleteSelected() {
         return;
     }
 
+    closeModal();
+    showLoading(`Deleting ${chosen.length} message(s)...`);
+
     // DESCENDING order — splicing low indices first would shift higher ones.
     const indices = [...new Set(chosen.map(r => r.idx))].sort((a, b) => b - a);
     const context = getContext();
@@ -339,7 +342,6 @@ async function deleteSelected() {
         if (context.saveChat) await context.saveChat();
     } catch (_) {}
 
-    closeModal();
     lastScan = [];
 
     // Reload the chat so DOM matches the updated chat array cleanly.
@@ -349,6 +351,7 @@ async function deleteSelected() {
         try { await eventSource.emit(event_types.CHAT_CHANGED); } catch (_) {}
     }
 
+    hideLoading();
     toastr.success(`Deleted ${indices.length} message(s).`);
 }
 
