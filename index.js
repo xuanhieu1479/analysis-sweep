@@ -430,6 +430,7 @@ async function onCompactScan() {
     lastCompactScan = scanCompactWithPattern(pattern);
     if (lastCompactScan.length === 0) {
         $("#asweep_compact_status").text("No matches found.");
+        toastr.info("Nothing to compact.");
         return;
     }
     $("#asweep_compact_status").text(`Found ${lastCompactScan.length} message(s) with matches.`);
@@ -440,6 +441,7 @@ async function compactCommand(args, value) {
     const pattern = await getCompactPattern();
     lastCompactScan = scanCompactWithPattern(pattern);
     if (lastCompactScan.length === 0) {
+        toastr.info("Nothing to compact.");
         return "";
     }
     openCompactModal();
