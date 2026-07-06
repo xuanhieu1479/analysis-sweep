@@ -185,3 +185,33 @@
     background: #8a5a3b;
     color: #fff;
 }
+
+/* Loading overlay */
+.asweep-loading {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.asweep-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--SmartThemeBodyColor, #eee);
+    font-size: 1.1em;
+}
+.asweep-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: var(--SmartThemeBodyColor, #eee);
+    border-radius: 50%;
+    animation: asweep-spin 0.8s linear infinite;
+}
+@keyframes asweep-spin {
+    to { transform: rotate(360deg); }
+}

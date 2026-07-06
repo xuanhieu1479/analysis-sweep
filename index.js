@@ -268,12 +268,24 @@ function openCompactModal() {
 }
 function closeCompactModal() { $("#asweep_compact_modal").hide(); }
 
+function showLoading(message = "Processing...") {
+    $("#asweep_loading_text").text(message);
+    $("#asweep_loading").show();
+}
+
+function hideLoading() {
+    $("#asweep_loading").hide();
+}
+
 async function applyCompact() {
     const chosen = lastCompactScan.filter(r => r.include);
     if (chosen.length === 0) {
         toastr.info("Nothing selected.");
         return;
     }
+
+    closeCompactModal();
+    showLoading(`Compacting ${chosen.length} message(s)...`);
 
     const context = getContext();
     const chat = context.chat;
@@ -288,7 +300,6 @@ async function applyCompact() {
         if (context.saveChat) await context.saveChat();
     } catch (_) {}
 
-    closeCompactModal();
     lastCompactScan = [];
 
     try {
@@ -297,6 +308,7 @@ async function applyCompact() {
         try { await eventSource.emit(event_types.CHAT_CHANGED); } catch (_) {}
     }
 
+    hideLoading();
     toastr.success(`Compacted ${chosen.length} message(s).`);
 }
 
@@ -504,6 +516,7 @@ jQuery(async () => {
     // drawer is collapsed (parent would otherwise hide it).
     $("#asweep_modal").detach().appendTo("body");
     $("#asweep_compact_modal").detach().appendTo("body");
+    $("#asweep_loading").detach().appendTo("body");
 
     const s = settings();
     $("#asweep_pattern").val(s.pattern);
