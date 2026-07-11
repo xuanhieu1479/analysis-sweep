@@ -277,6 +277,17 @@ function hideLoading() {
     $("#asweep_loading").hide();
 }
 
+async function clearCopiedFlags() {
+    try {
+        await fetch(`${LOREBOOK_APP_URL}/api/clear-copied`, {
+            method: "POST",
+            signal: AbortSignal.timeout(2000),
+        });
+    } catch {
+        // Silent fail — app may not be running
+    }
+}
+
 async function applyCompact() {
     const chosen = lastCompactScan.filter(r => r.include);
     if (chosen.length === 0) {
@@ -301,6 +312,9 @@ async function applyCompact() {
     } catch (_) {}
 
     lastCompactScan = [];
+
+    // Clear copied flags in the lorebook app so entries become "available" again
+    await clearCopiedFlags();
 
     try {
         await reloadCurrentChat();
