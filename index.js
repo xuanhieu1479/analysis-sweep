@@ -1,6 +1,7 @@
 import { extension_settings, getContext } from "../../../extensions.js";
 import { saveSettingsDebounced, eventSource, event_types, reloadCurrentChat } from "../../../../script.js";
 import { registerSlashCommand, executeSlashCommands } from "../../../slash-commands.js";
+import { worldInfoCache, updateWorldInfoList, world_names } from "../../../world-info.js";
 
 const extensionName = "analysis-sweep";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -600,6 +601,18 @@ jQuery(async () => {
     });
     $("body").append($floatingReload);
 
+    const $floatingWorldReload = $(`<div id="asweep_floating_world_reload" class="fa-solid fa-book-atlas" title="Reload World Info"></div>`);
+    $floatingWorldReload.on("click", async () => {
+        try {
+            worldInfoCache.clear();
+            await updateWorldInfoList();
+            toastr.success("World Info reloaded.");
+        } catch (e) {
+            toastr.warning("World Info reload failed: " + e.message);
+        }
+    });
+    $("body").append($floatingWorldReload);
+
     const STACK_GAP = 12; // px between buttons
     const BTN_SIZE = 36;
 
@@ -620,6 +633,7 @@ jQuery(async () => {
         $floatingScan.css({ left: left + "px", top: top + "px" });
         $floatingCompact.css({ left: left + "px", top: (top + BTN_SIZE + STACK_GAP) + "px" });
         $floatingReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 2) + "px" });
+        $floatingWorldReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 3) + "px" });
     }
 
     positionFloatingButtons();
