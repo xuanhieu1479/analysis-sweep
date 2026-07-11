@@ -601,17 +601,6 @@ jQuery(async () => {
     });
     $("body").append($floatingReload);
 
-    const $floatingWorldReload = $(`<div id="asweep_floating_world_reload" class="fa-solid fa-book-atlas" title="Reload World Info"></div>`);
-    $floatingWorldReload.on("click", async () => {
-        try {
-            worldInfoCache.clear();
-            await getContext().updateWorldInfoList();
-        } catch (e) {
-            toastr.warning("World Info reload failed: " + e.message);
-        }
-    });
-    $("body").append($floatingWorldReload);
-
     // SSE listener for auto-reloading world info when lorebook app saves
     try {
         const worldInfoSSE = new EventSource(`${LOREBOOK_APP_URL}/api/world-info/stream`);
@@ -643,7 +632,6 @@ jQuery(async () => {
         $floatingScan.css({ left: left + "px", top: top + "px" });
         $floatingCompact.css({ left: left + "px", top: (top + BTN_SIZE + STACK_GAP) + "px" });
         $floatingReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 2) + "px" });
-        $floatingWorldReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 3) + "px" });
     }
 
     positionFloatingButtons();
