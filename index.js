@@ -25,6 +25,7 @@ const defaultSettings = {
 
 let lastScan = [];
 let lastCompactScan = [];
+let textareaDebounce = null;
 
 function settings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
@@ -611,6 +612,19 @@ jQuery(async () => {
             } catch (_) {}
         });
     } catch (_) {}
+
+    // Sync ST textarea content to lorebook app for live keyword matching
+    $("#send_textarea").on("input", () => {
+        clearTimeout(textareaDebounce);
+        textareaDebounce = setTimeout(() => {
+            const content = $("#send_textarea").val();
+            fetch(`${LOREBOOK_APP_URL}/api/st-textarea`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content }),
+            }).catch(() => {});
+        }, 500);
+    });
 
     const STACK_GAP = 12; // px between buttons
     const BTN_SIZE = 36;
