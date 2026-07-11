@@ -1,7 +1,7 @@
 import { extension_settings, getContext } from "../../../extensions.js";
 import { saveSettingsDebounced, eventSource, event_types, reloadCurrentChat } from "../../../../script.js";
 import { registerSlashCommand, executeSlashCommands } from "../../../slash-commands.js";
-import { worldInfoCache, updateWorldInfoList, world_names } from "../../../world-info.js";
+import { worldInfoCache } from "../../../world-info.js";
 
 const extensionName = "analysis-sweep";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -605,13 +605,23 @@ jQuery(async () => {
     $floatingWorldReload.on("click", async () => {
         try {
             worldInfoCache.clear();
-            await updateWorldInfoList();
-            toastr.success("World Info reloaded.");
+            await getContext().updateWorldInfoList();
         } catch (e) {
             toastr.warning("World Info reload failed: " + e.message);
         }
     });
     $("body").append($floatingWorldReload);
+
+    // SSE listener for auto-reloading world info when lorebook app saves
+    try {
+        const worldInfoSSE = new EventSource(`${LOREBOOK_APP_URL}/api/world-info/stream`);
+        worldInfoSSE.addEventListener("world-info-updated", async () => {
+            try {
+                worldInfoCache.clear();
+                await getContext().updateWorldInfoList();
+            } catch (_) {}
+        });
+    } catch (_) {}
 
     const STACK_GAP = 12; // px between buttons
     const BTN_SIZE = 36;
