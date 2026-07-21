@@ -404,7 +404,7 @@ function markRange(args, value) {
     const startIdx = parseInt(trimmed, 10);
 
     if (isNaN(startIdx) || startIdx < 0) {
-        toastr.warning("Usage: /mark N — marks messages from index N to the last message (inclusive)");
+        toastr.warning("Usage: /mark N — marks messages from index N to last - 1 (preserves the final message)");
         return "";
     }
 
@@ -415,15 +415,17 @@ function markRange(args, value) {
     }
 
     const lastIdx = chat.length - 1;
-    if (startIdx > lastIdx) {
-        toastr.warning(`Start index ${startIdx} exceeds last message index ${lastIdx}.`);
+    const endIdx = lastIdx - 1;
+
+    if (startIdx > endIdx) {
+        toastr.warning(`Start index ${startIdx} exceeds last - 1 index ${endIdx}.`);
         return "";
     }
 
     const s = settings();
     let markedCount = 0;
 
-    for (let i = startIdx; i <= lastIdx; i++) {
+    for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
         const fp = fingerprint(msg);
         if (!s.markedFingerprints.includes(fp)) {
@@ -434,7 +436,7 @@ function markRange(args, value) {
 
     saveSettingsDebounced();
     injectAllMarkButtons();
-    toastr.success(`Marked ${markedCount} message(s) from index ${startIdx} to ${lastIdx}.`);
+    toastr.success(`Marked ${markedCount} message(s) from index ${startIdx} to ${endIdx}.`);
     return "";
 }
 
@@ -525,7 +527,7 @@ function observeChat() {
 jQuery(async () => {
     // Register slash commands
     registerSlashCommand("clear", cleanMessages, [], "Deletes messages from index N to last - 1, preserving the final message. /clear 30 = delete from index 30");
-    registerSlashCommand("mark", markRange, [], "Marks messages from index N to the last message (inclusive) for analysis-sweep deletion. /mark 300 = mark from index 300 to end");
+    registerSlashCommand("mark", markRange, [], "Marks messages from index N to last - 1, preserving the final message. /mark 300 = mark from index 300 to last - 1");
     registerSlashCommand("compact", compactCommand, [], "Scans messages and strips out content matching the compact pattern (e.g., OOC context blocks). Opens a preview before applying.");
 
     const html = await $.get(`${extensionFolderPath}/settings.html`);
