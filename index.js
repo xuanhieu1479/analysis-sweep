@@ -67,7 +67,7 @@ function templateToRegex(template) {
     const before = template.slice(0, idx);
     const after = template.slice(idx + placeholder.length);
 
-    const pattern = escapeRegex(before) + "[\\s\\S]*?" + escapeRegex(after);
+    const pattern = escapeRegex(before) + "[\\s\\S]*" + escapeRegex(after);
     return new RegExp(pattern, "g");
 }
 
