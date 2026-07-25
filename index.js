@@ -21,6 +21,7 @@ const defaultSettings = {
     markedFingerprints: [],
     compactPattern: `[OOC: Background context:
 {{content}}]`,
+    compactPattern2: "",
 };
 
 let lastScan = [];
@@ -95,15 +96,24 @@ async function getCompactPattern() {
     return settings().compactPattern || "";
 }
 
-function scanCompactWithPattern(template) {
-    if (!template || !template.trim()) {
-        toastr.error("Compact pattern is empty. Configure it in the Lorebook app or extension settings.");
+function scanCompactWithPattern(template, template2 = "") {
+    const hasTemplate1 = template && template.trim();
+    const hasTemplate2 = template2 && template2.trim();
+
+    if (!hasTemplate1 && !hasTemplate2) {
+        toastr.error("No compact patterns configured. Configure at least one in the Lorebook app or extension settings.");
         return [];
     }
 
-    const regex = templateToRegex(template);
-    if (!regex) {
-        toastr.error("Compact pattern must contain {{content}} placeholder.");
+    const regex1 = hasTemplate1 ? templateToRegex(template) : null;
+    const regex2 = hasTemplate2 ? templateToRegex(template2) : null;
+
+    if (hasTemplate1 && !regex1) {
+        toastr.error("Primary compact pattern must contain {{content}} placeholder.");
+        return [];
+    }
+    if (hasTemplate2 && !regex2) {
+        toastr.error("Secondary compact pattern must contain {{content}} placeholder.");
         return [];
     }
 
@@ -112,13 +122,20 @@ function scanCompactWithPattern(template) {
 
     chat.forEach((msg, idx) => {
         const text = msg.mes || "";
-        const matches = text.match(regex);
-        if (matches && matches.length > 0) {
-            const stripped = text.replace(regex, "").trim();
+        const matches1 = regex1 ? text.match(regex1) || [] : [];
+        const matches2 = regex2 ? text.match(regex2) || [] : [];
+        const allMatches = [...matches1, ...matches2];
+
+        if (allMatches.length > 0) {
+            let stripped = text;
+            if (regex1) stripped = stripped.replace(regex1, "");
+            if (regex2) stripped = stripped.replace(regex2, "");
+            stripped = stripped.trim();
+
             results.push({
                 idx,
                 msg,
-                matches,
+                matches: allMatches,
                 originalText: text,
                 strippedText: stripped,
                 include: true,
@@ -456,11 +473,16 @@ function onScan() {
     openModal();
 }
 
+function getCompactPattern2() {
+    return settings().compactPattern2 || "";
+}
+
 async function onCompactScan() {
     $("#asweep_compact_status").text("Fetching pattern...");
     const pattern = await getCompactPattern();
+    const pattern2 = getCompactPattern2();
 
-    lastCompactScan = scanCompactWithPattern(pattern);
+    lastCompactScan = scanCompactWithPattern(pattern, pattern2);
     if (lastCompactScan.length === 0) {
         $("#asweep_compact_status").text("No matches found.");
         toastr.info("Nothing to compact.");
@@ -472,7 +494,8 @@ async function onCompactScan() {
 
 async function compactCommand(args, value) {
     const pattern = await getCompactPattern();
-    lastCompactScan = scanCompactWithPattern(pattern);
+    const pattern2 = getCompactPattern2();
+    lastCompactScan = scanCompactWithPattern(pattern, pattern2);
     if (lastCompactScan.length === 0) {
         toastr.info("Nothing to compact.");
         return "";
@@ -544,6 +567,7 @@ jQuery(async () => {
     $("#asweep_threshold").val(s.threshold);
     $("#asweep_fuzzy").prop("checked", s.fuzzy);
     $("#asweep_compact_pattern").val(s.compactPattern);
+    $("#asweep_compact_pattern2").val(s.compactPattern2);
 
     $("#asweep_pattern").on("input", () => {
         settings().pattern = $("#asweep_pattern").val();
@@ -559,6 +583,10 @@ jQuery(async () => {
     });
     $("#asweep_compact_pattern").on("input", () => {
         settings().compactPattern = $("#asweep_compact_pattern").val();
+        saveSettingsDebounced();
+    });
+    $("#asweep_compact_pattern2").on("input", () => {
+        settings().compactPattern2 = $("#asweep_compact_pattern2").val();
         saveSettingsDebounced();
     });
 
