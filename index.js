@@ -457,6 +457,51 @@ function markRange(args, value) {
     return "";
 }
 
+function autoMark() {
+    const chat = getContext().chat || [];
+    if (chat.length === 0) {
+        toastr.warning("No chat loaded.");
+        return;
+    }
+
+    const s = settings();
+    const lastIdx = chat.length - 1;
+    const endIdx = lastIdx - 1;
+
+    if (endIdx < 0) {
+        toastr.info("Not enough messages to mark.");
+        return;
+    }
+
+    let highestMarkedIdx = -1;
+    chat.forEach((msg, idx) => {
+        if (s.markedFingerprints.includes(fingerprint(msg))) {
+            if (idx > highestMarkedIdx) highestMarkedIdx = idx;
+        }
+    });
+
+    const startIdx = highestMarkedIdx + 1;
+
+    if (startIdx > endIdx) {
+        toastr.info("Nothing to mark — already marked up to last - 1.");
+        return;
+    }
+
+    let markedCount = 0;
+    for (let i = startIdx; i <= endIdx; i++) {
+        const msg = chat[i];
+        const fp = fingerprint(msg);
+        if (!s.markedFingerprints.includes(fp)) {
+            s.markedFingerprints.push(fp);
+            markedCount++;
+        }
+    }
+
+    saveSettingsDebounced();
+    injectAllMarkButtons();
+    toastr.success(`Auto-marked ${markedCount} message(s) from index ${startIdx} to ${endIdx}.`);
+}
+
 function onScan() {
     // Persist current UI values first.
     settings().pattern = $("#asweep_pattern").val();
@@ -632,6 +677,10 @@ jQuery(async () => {
     });
     $("body").append($floatingReload);
 
+    const $floatingAutoMark = $(`<div id="asweep_floating_automark" class="fa-solid fa-forward" title="Auto Mark: Mark from last marked index to end"></div>`);
+    $floatingAutoMark.on("click", autoMark);
+    $("body").append($floatingAutoMark);
+
     // SSE listener for auto-reloading world info when lorebook app saves
     try {
         const worldInfoSSE = new EventSource(`${LOREBOOK_APP_URL}/api/world-info/stream`);
@@ -676,6 +725,7 @@ jQuery(async () => {
         $floatingScan.css({ left: left + "px", top: top + "px" });
         $floatingCompact.css({ left: left + "px", top: (top + BTN_SIZE + STACK_GAP) + "px" });
         $floatingReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 2) + "px" });
+        $floatingAutoMark.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 3) + "px" });
     }
 
     positionFloatingButtons();
