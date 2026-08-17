@@ -61,14 +61,14 @@ function escapeRegex(str) {
 }
 
 function templateToRegex(template) {
-    const placeholder = "{{content}}";
-    const idx = template.indexOf(placeholder);
-    if (idx === -1) return null;
+    // Must have {{content}} placeholder
+    if (!template.includes("{{content}}")) return null;
 
-    const before = template.slice(0, idx);
-    const after = template.slice(idx + placeholder.length);
+    // Replace both {{content}} and {{id}} with regex patterns that match any content
+    let pattern = escapeRegex(template);
+    pattern = pattern.replace(/\\\{\\\{content\\\}\\\}/g, "[\\s\\S]*?");
+    pattern = pattern.replace(/\\\{\\\{id\\\}\\\}/g, "[\\s\\S]*?");
 
-    const pattern = escapeRegex(before) + "[\\s\\S]*" + escapeRegex(after);
     return new RegExp(pattern, "g");
 }
 
