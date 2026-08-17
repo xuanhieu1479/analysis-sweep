@@ -35,8 +35,8 @@ Three buttons anchored to the left side of the chat area:
 
 - **Auto-reload World Info**: Automatically reloads SillyTavern's world info cache when the [Lorebook Management app](https://github.com/xuanhieu1479/SillyTavern-Lorebook-Management) saves changes (via SSE).
 - **Live Textarea Sync**: Streams ST's input textarea content to the Lorebook app for real-time keyword matching preview.
+- **Live Chat Sync**: Sends all chat messages to the Lorebook app so it can track which entries are already pasted (entries with IDs found in chat are hidden from the Live Matches panel).
 - **Sync Compact Pattern**: Fetches the compact pattern from the Lorebook Management app settings.
-- **Clear Copied Flags**: Clears "copied" entry flags in the app after compacting chat.
 
 ## Settings
 

@@ -692,15 +692,22 @@ jQuery(async () => {
         });
     } catch (_) {}
 
-    // Sync ST textarea content to lorebook app for live keyword matching
+    // Helper to extract message content from chat for live tracking
+    function getChatMessages() {
+        const chat = getContext().chat || [];
+        return chat.map(msg => msg.mes || "").filter(Boolean);
+    }
+
+    // Sync ST textarea content and chat messages to lorebook app for live keyword matching
     $("#send_textarea").on("input", () => {
         clearTimeout(textareaDebounce);
         textareaDebounce = setTimeout(() => {
             const content = $("#send_textarea").val();
+            const chatMessages = getChatMessages();
             fetch(`${LOREBOOK_APP_URL}/api/st-textarea`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content }),
+                body: JSON.stringify({ content, chatMessages }),
             }).catch(() => {});
         }, 500);
     });
