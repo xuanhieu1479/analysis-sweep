@@ -699,16 +699,25 @@ jQuery(async () => {
     }
 
     // Sync ST textarea content and chat messages to lorebook app for live keyword matching
+    // Also receives clipboard content for available entries and writes to clipboard
     $("#send_textarea").on("input", () => {
         clearTimeout(textareaDebounce);
-        textareaDebounce = setTimeout(() => {
+        textareaDebounce = setTimeout(async () => {
             const content = $("#send_textarea").val();
             const chatMessages = getChatMessages();
-            fetch(`${LOREBOOK_APP_URL}/api/st-textarea`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content, chatMessages }),
-            }).catch(() => {});
+            try {
+                const response = await fetch(`${LOREBOOK_APP_URL}/api/st-textarea`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content, chatMessages }),
+                });
+                const data = await response.json();
+                if (data.clipboardContent) {
+                    await navigator.clipboard.writeText(data.clipboardContent);
+                }
+            } catch {
+                // Silent fail
+            }
         }, 500);
     });
 
