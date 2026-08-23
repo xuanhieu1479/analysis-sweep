@@ -482,6 +482,11 @@ function autoMark() {
 
     const startIdx = highestMarkedIdx + 1;
 
+    if (startIdx === 0) {
+        toastr.warning("No previously marked messages found. Use /mark first.");
+        return;
+    }
+
     if (startIdx > endIdx) {
         toastr.info("Nothing to mark — already marked up to last - 1.");
         return;
