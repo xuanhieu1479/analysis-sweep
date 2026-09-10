@@ -22,6 +22,10 @@ const defaultSettings = {
     compactPattern: `[OOC: Background context:
 {{content}}]`,
     compactPattern2: "",
+    shortcutScan: "",
+    shortcutCompact: "",
+    shortcutReload: "",
+    shortcutAutoMark: "",
 };
 
 let lastScan = [];
@@ -618,6 +622,10 @@ jQuery(async () => {
     $("#asweep_fuzzy").prop("checked", s.fuzzy);
     $("#asweep_compact_pattern").val(s.compactPattern);
     $("#asweep_compact_pattern2").val(s.compactPattern2);
+    $("#asweep_shortcut_scan").val(s.shortcutScan);
+    $("#asweep_shortcut_compact").val(s.shortcutCompact);
+    $("#asweep_shortcut_reload").val(s.shortcutReload);
+    $("#asweep_shortcut_automark").val(s.shortcutAutoMark);
 
     $("#asweep_pattern").on("input", () => {
         settings().pattern = $("#asweep_pattern").val();
@@ -637,6 +645,22 @@ jQuery(async () => {
     });
     $("#asweep_compact_pattern2").on("input", () => {
         settings().compactPattern2 = $("#asweep_compact_pattern2").val();
+        saveSettingsDebounced();
+    });
+    $("#asweep_shortcut_scan").on("input", () => {
+        settings().shortcutScan = $("#asweep_shortcut_scan").val().trim();
+        saveSettingsDebounced();
+    });
+    $("#asweep_shortcut_compact").on("input", () => {
+        settings().shortcutCompact = $("#asweep_shortcut_compact").val().trim();
+        saveSettingsDebounced();
+    });
+    $("#asweep_shortcut_reload").on("input", () => {
+        settings().shortcutReload = $("#asweep_shortcut_reload").val().trim();
+        saveSettingsDebounced();
+    });
+    $("#asweep_shortcut_automark").on("input", () => {
+        settings().shortcutAutoMark = $("#asweep_shortcut_automark").val().trim();
         saveSettingsDebounced();
     });
 
@@ -685,6 +709,48 @@ jQuery(async () => {
     const $floatingAutoMark = $(`<div id="asweep_floating_automark" class="fa-solid fa-forward" title="Auto Mark: Mark from last marked index to end"></div>`);
     $floatingAutoMark.on("click", autoMark);
     $("body").append($floatingAutoMark);
+
+    // Keyboard shortcuts for floating buttons
+    function parseShortcut(str) {
+        if (!str) return null;
+        const parts = str.split("+").map(p => p.trim().toLowerCase());
+        if (parts.length !== 2) return null;
+        const modifier = parts[0];
+        const key = parts[1];
+        if (!["ctrl", "shift", "alt"].includes(modifier)) return null;
+        if (!/^[a-z0-9]$/.test(key)) return null;
+        return { modifier, key };
+    }
+
+    function matchesShortcut(e, shortcutStr) {
+        const sc = parseShortcut(shortcutStr);
+        if (!sc) return false;
+        const modMatch =
+            (sc.modifier === "ctrl" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) ||
+            (sc.modifier === "shift" && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) ||
+            (sc.modifier === "alt" && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey);
+        return modMatch && e.key.toLowerCase() === sc.key;
+    }
+
+    $(document).on("keydown", (e) => {
+        const s = settings();
+        const actions = [
+            { shortcut: s.shortcutScan, action: onScan },
+            { shortcut: s.shortcutCompact, action: onCompactScan },
+            { shortcut: s.shortcutReload, action: async () => {
+                try { await reloadCurrentChat(); }
+                catch (err) { toastr.warning("Reload failed: " + err.message); }
+            }},
+            { shortcut: s.shortcutAutoMark, action: autoMark },
+        ];
+        for (const { shortcut, action } of actions) {
+            if (matchesShortcut(e, shortcut)) {
+                e.preventDefault();
+                action();
+                return;
+            }
+        }
+    });
 
     // SSE listener for auto-reloading world info when lorebook app saves
     try {
