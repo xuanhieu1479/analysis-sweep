@@ -66,7 +66,7 @@ function templateToRegex(template) {
 
     // Replace both {{content}} and {{id}} with regex patterns that match any content
     let pattern = escapeRegex(template);
-    pattern = pattern.replace(/\\\{\\\{content\\\}\\\}/g, "[\\s\\S]*?");
+    pattern = pattern.replace(/\\\{\\\{content\\\}\\\}/g, "[\\s\\S]*");
     pattern = pattern.replace(/\\\{\\\{id\\\}\\\}/g, "[\\s\\S]*?");
 
     return new RegExp(pattern, "g");
