@@ -734,11 +734,13 @@ jQuery(async () => {
     }
 
     // Sync ST textarea content and chat messages to lorebook app for live keyword matching
-    // Also receives clipboard content for available entries and writes to clipboard
-    $("#send_textarea").on("input", () => {
+    // Also receives clipboard content for available entries and writes to clipboard.
+    // Delegated so it also covers #curEditTextarea, which only exists while a message is being edited.
+    $(document).on("input", "#send_textarea, #curEditTextarea", e => {
+        const textarea = e.target;
         clearTimeout(textareaDebounce);
         textareaDebounce = setTimeout(async () => {
-            const content = $("#send_textarea").val();
+            const content = $(textarea).val();
             const chatMessages = getChatMessages();
             try {
                 const response = await fetch(`${LOREBOOK_APP_URL}/api/st-textarea`, {
