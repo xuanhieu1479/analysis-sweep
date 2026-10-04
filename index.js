@@ -704,6 +704,18 @@ jQuery(async () => {
     $floatingAutoMark.on("click", autoMark);
     $("body").append($floatingAutoMark);
 
+    // Toggle "# Msg. to Load" between 0 (full chat) and 5 (shrunk), then reload
+    const $floatingTruncate = $(`<div id="asweep_floating_truncate" class="fa-solid fa-up-down" title="Toggle # Msg. to Load (0 / 5)"></div>`);
+    $floatingTruncate.on("click", async () => {
+        const next = getContext().powerUserSettings.chat_truncation === 0 ? 5 : 0;
+        // ST's own slider handler updates power_user, the counter, and saves
+        $("#chat_truncation").val(next).trigger("input");
+        try { await reloadCurrentChat(); }
+        catch (e) { toastr.warning("Reload failed: " + e.message); }
+        toastr.info(next === 0 ? "Showing full chat." : `Showing last ${next} messages.`);
+    });
+    $("body").append($floatingTruncate);
+
     // SSE listener for auto-reloading world info when lorebook app saves
     try {
         const worldInfoSSE = new EventSource(`${LOREBOOK_APP_URL}/api/world-info/stream`);
@@ -765,6 +777,7 @@ jQuery(async () => {
         $floatingCompact.css({ left: left + "px", top: (top + BTN_SIZE + STACK_GAP) + "px" });
         $floatingReload.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 2) + "px" });
         $floatingAutoMark.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 3) + "px" });
+        $floatingTruncate.css({ left: left + "px", top: (top + (BTN_SIZE + STACK_GAP) * 4) + "px" });
     }
 
     positionFloatingButtons();

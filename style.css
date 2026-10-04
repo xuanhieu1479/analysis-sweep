@@ -23,7 +23,8 @@
 #asweep_floating_scan,
 #asweep_floating_compact,
 #asweep_floating_reload,
-#asweep_floating_automark {
+#asweep_floating_automark,
+#asweep_floating_truncate {
     position: fixed;
     z-index: 40;
     width: 36px;
@@ -44,7 +45,8 @@
 #asweep_floating_scan:hover,
 #asweep_floating_compact:hover,
 #asweep_floating_reload:hover,
-#asweep_floating_automark:hover { opacity: 1; }
+#asweep_floating_automark:hover,
+#asweep_floating_truncate:hover { opacity: 1; }
 .mes .asweep-mark-btn:hover { opacity: 1; }
 .mes .asweep-mark-btn.marked { opacity: 1; color: #e06c75; }
 

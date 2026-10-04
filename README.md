@@ -18,10 +18,12 @@ A SillyTavern extension for chat cleanup and lorebook integration.
 
 ### Floating Shortcut Buttons
 
-Three buttons anchored to the left side of the chat area:
+Buttons anchored to the left side of the chat area:
 - **Broom** - Open pattern scan
 - **Compress** - Open compact scan  
 - **Rotate** - Reload current chat
+- **Forward** - Auto Mark from last marked index to end
+- **Up-Down** - Toggle "# Msg. to Load" between 0 (full chat) and 5, then reload
 
 ### Slash Commands
 
