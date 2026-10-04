@@ -229,6 +229,21 @@ function openModal() {
 }
 function closeModal() { $("#asweep_modal").hide(); }
 
+function extractEntryTitles(matches) {
+    // A header line looks like "Local Main Cast:31"; the entry title is the next non-empty line
+    const headerRe = /^[^:]+:\s*\d+$/;
+    const titles = [];
+    for (const m of matches) {
+        const lines = m.split("\n").map(l => l.trim());
+        for (let i = 0; i < lines.length; i++) {
+            if (!headerRe.test(lines[i])) continue;
+            const title = lines.slice(i + 1).find(Boolean);
+            if (title) titles.push(title);
+        }
+    }
+    return titles;
+}
+
 function renderCompactResults() {
     const $list = $("#asweep_compact_results");
     $list.empty();
@@ -236,7 +251,10 @@ function renderCompactResults() {
         const sender = r.msg.name || (r.msg.is_user ? "User" : "AI");
         const date = r.msg.send_date || "";
         const matchCount = r.matches.length;
-        const snippet = r.originalText.replace(/\s+/g, " ").slice(0, 100);
+        const titles = extractEntryTitles(r.matches);
+        const titleList = $("<ul class='asweep-snippet asweep-entry-titles'></ul>");
+        if (titles.length === 0) titleList.append($("<li></li>").text("-"));
+        for (const t of titles) titleList.append($("<li></li>").text(t));
         const isEmpty = !r.strippedText.trim();
 
         const beforePre = $("<pre class='asweep-compact-before'></pre>").text(r.originalText);
@@ -256,7 +274,7 @@ function renderCompactResults() {
         }
 
         head.append($("<span></span>").text(sender))
-            .append($("<span class='asweep-snippet'></span>").text(snippet))
+            .append(titleList)
             .append($("<small></small>").text(date))
             .on("click", e => {
                 if (e.target.tagName === "INPUT") return;

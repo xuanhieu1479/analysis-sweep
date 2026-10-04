@@ -122,6 +122,15 @@
     text-overflow: ellipsis;
     font-size: 0.9em;
 }
+.asweep-entry-titles {
+    margin: 0;
+    padding-left: 1.2em;
+    min-width: 0;
+}
+.asweep-entry-titles li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .asweep-full {
     margin-top: 6px;
     padding: 6px;
