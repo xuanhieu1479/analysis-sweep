@@ -755,7 +755,7 @@ jQuery(async () => {
             } catch {
                 // Silent fail
             }
-        }, 500);
+        }, 2000);
     });
 
     const STACK_GAP = 12; // px between buttons
